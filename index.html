@@ -1,0 +1,71 @@
+bBody';
+    if(!participants.length){tb.innerHTML='<tr><td colspan="5" class="es">No participants yet.</td></tr>';return;}
+    const rows=participants.map(p=>{
+        const sc=Object.values(p.picks).map(g=>{
+            let score=toNum(golferScores[g]);
+            if(missedCuts.has(g))score+=60;
+            return{name:g,score};
+        });
+        sc.sort((a,b)=>a.score-b.score);
+        const b6=sc.slice(0,6),tot=b6.reduce((s,g)=>s+g.score,0);
+        return{...p,sc,b6,tot,pn:toNum(p.winScore)};
+    }).sort((a,b)=>a.tot-b.tot);
+    const allN=Object.values(golferScores).map(v=>toNum(v));
+    const best=allN.length?Math.min(...allN):null;
+    tb.innerHTML=rows.map((p,i)=>{
+        const rc=i===0?'r1':i===1?'r2':i===2?'r3':'';
+        const tc=p.tot<0?'su':p.tot>0?'so':'se';
+        let ph=p.winScore;
+        if(best!==null){const d=Math.abs(p.pn-best);const cl=d===0?'pe2':d<=2?'pc2':'pf';ph=`${p.winScore} <span class="pb ${cl}">${d===0?'🎯 Exact!':d===1?'Off by 1':`Off by ${d}`}</span>`;}
+        const chips=p.sc.map(g=>`<span class="chip ${p.b6.includes(g)?'cnt':'drp'}">${g.name} (${fmt(g.score)})${missedCuts.has(g.name)?' <span style="color:rgba(192,57,43,.6)">MC</span>':''}</span>`).join('');
+        return`<tr><td class="rk ${rc}">${i+1}</td><td class="pnc">${p.name}</td><td class="tsc ${tc}">${fmt(p.tot)}</td><td style="font-size:13px">${ph}</td><td class="gd">${chips}</td></tr>`;
+    }).join('');
+}
+
+function fmt(v){if(v===0||v===null||v===undefined||v==='E')return'E';if(typeof v==='string'){const n=parseInt(v);if(isNaN(n))return v;v=n;}return v>0?`+${v}`:String(v);}
+function toNum(v){if(!v||v==='E')return 0;if(typeof v==='number')return v;const n=parseInt(String(v).replace('+',''));return isNaN(n)?0:n;}
+
+function switchTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tc').forEach(c=>c.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    document.querySelectorAll('.tab').forEach(t=>{if(t.getAttribute('onclick')?.includes(`'${name}'`))t.classList.add('active');});
+    if(name==='all-picks')renderAllPicks();
+    if(name==='scores')renderScores();
+    if(name==='leaderboard')renderLeaderboard();
+}
+
+async function showTab(name,el){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tc').forEach(c=>c.classList.remove('active'));
+    el.classList.add('active');document.getElementById(name).classList.add('active');
+    await loadData();
+    if(name==='all-picks')renderAllPicks();
+    if(name==='scores')renderScores();
+    if(name==='leaderboard')renderLeaderboard();
+}
+
+async function init(){
+    document.getElementById('ov').style.display='flex';
+    await loadData();
+    document.getElementById('ov').style.display='none';
+    buildGrid();
+    updateEntryTab();
+    updateAdminUI();
+    scheduleAutoRefresh();
+}
+
+async function refreshData(){
+    document.getElementById('ov').style.display='flex';
+    await loadData(true);
+    document.getElementById('ov').style.display='none';
+    const a=document.querySelector('.tc.active');
+    if(a?.id==='all-picks')renderAllPicks();
+    if(a?.id==='scores')renderScores();
+    if(a?.id==='leaderboard')renderLeaderboard();
+}
+
+init();
+</script>
+</body>
+</html>
