@@ -369,6 +369,15 @@ async function toggleMC(g,checked){
 function renderLeaderboard(){
     const tb=document.getElementById('lbBody');
     if(!participants.length){tb.innerHTML='<tr><td colspan="5" class="es">No participants yet.</td></tr>';return;}
+    
+    // Hide picks until tournament starts
+    if(!visible()){
+        tb.innerHTML=participants.map((p,i)=>{
+            return`<tr><td class="rk">${i+1}</td><td class="pnc">${p.name}</td><td colspan="3" style="text-align:center;color:rgba(255,255,255,.4);font-size:13px">🔒 Picks and scores hidden until tournament starts</td></tr>`;
+        }).join('');
+        return;
+    }
+    
     const rows=participants.map(p=>{
         const sc=Object.values(p.picks).map(g=>{
             let score=toNum(golferScores[g]);
