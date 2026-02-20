@@ -490,6 +490,9 @@ function updateEntryTab(){
             <p style="color:rgba(255,255,255,.5);font-size:15px">The tournament has started — no new picks are being accepted.</p>
             <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.3)">Pool admin can <button onclick="checkAdmin()" style="background:none;border:none;color:var(--sand);font-size:13px;cursor:pointer;text-decoration:underline;padding:0">log in</button> to add entries.</p>
         </div>`;
+    } else if(visible() && isAdmin){
+        // Admin logged in after tournament start - need to rebuild the form
+        location.reload(); // Simplest way to restore the full entry form
     }
 }
 
