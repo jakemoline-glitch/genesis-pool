@@ -147,7 +147,7 @@ const GROUPS = {
 
 // ── Admin auth ──
 const ADMIN_HASH = 'a7f8c2e1b4d9f3a6c8e2b5d7f1a4c6e9b3d8f2a5c7e1b4d6f8a2c5e7b9d3f1'; // Titleistgolf88!!
-let isAdmin = false;
+let isAdmin = sessionStorage.getItem('genesisAdmin')==='true';
 
 function hashString(str) {
     // Simple hash for client-side check (not cryptographic, just obfuscation)
@@ -166,14 +166,9 @@ function checkAdmin() {
     // Check against stored password directly (hashed at build time)
     if (pw === atob('VGl0bGVpc3Rnb2xmODghIQ==')) {
         isAdmin = true;
+        sessionStorage.setItem('genesisAdmin', 'true');
         alert('✅ Admin mode enabled!');
-        updateEntryTab();
-        buildGrid();
-        updateAdminUI();
-        // Re-render current tab
-        const a = document.querySelector('.tc.active');
-        if (a?.id === 'all-picks') renderAllPicks();
-        if (a?.id === 'scores') renderScores();
+        location.reload();
     } else {
         alert('❌ Incorrect password.');
     }
@@ -490,10 +485,8 @@ function updateEntryTab(){
             <p style="color:rgba(255,255,255,.5);font-size:15px">The tournament has started — no new picks are being accepted.</p>
             <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,.3)">Pool admin can <button onclick="checkAdmin()" style="background:none;border:none;color:var(--sand);font-size:13px;cursor:pointer;text-decoration:underline;padding:0">log in</button> to add entries.</p>
         </div>`;
-    } else if(visible() && isAdmin){
-        // Admin logged in after tournament start - need to rebuild the form
-        location.reload(); // Simplest way to restore the full entry form
     }
+    // If admin, the form stays as-is (not locked)
 }
 
 function updateAdminUI(){
