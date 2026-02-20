@@ -196,31 +196,41 @@ let lastFetchTime=0;
 
 async function loadData(force=false){
     const now=Date.now();
-    if(!force && now-lastLoadTime < 10000) return; // skip if loaded within 10 seconds
+    if(!force && now-lastLoadTime < 10000) return;
     lastLoadTime=now;
     try{
         const d=await sbGet('genesisPool2026');
-        if(d && d.participants){
-            participants=d.participants;
-            golferScores=d.golferScores||{};
-            missedCuts=new Set(d.missedCuts||[]);
-        }
-        // If d is null or empty, DON'T overwrite - keep existing data
+        // Always accept data from Supabase, even if empty (could be new pool)
+        participants=d?.participants||[];
+        golferScores=d?.golferScores||{};
+        missedCuts=new Set(d?.missedCuts||[]);
     }
     catch(e){
-        console.error('Error loading data - keeping existing:', e);
-        // DON'T reset to empty on error - keep what we have
+        console.error('Error loading data:', e);
+        // On error, only reset if this is the first load (participants undefined)
+        if(participants===undefined){
+            participants=[];golferScores={};missedCuts=new Set();
+        }
+        // Otherwise keep existing data
     }
 }
 }
 async function saveData(){
-    // CRITICAL: Never save if participants is empty - this would wipe everyone
-    if(!participants || participants.length === 0){
-        console.error('BLOCKED: Attempted to save empty participants array');
-        alert('⚠️ Error: Cannot save - participant data is missing. Please refresh the page.');
-        return;
+    try{
+        // Get current data from Supabase before saving
+        const current=await sbGet('genesisPool2026');
+        const currentCount=current?.participants?.length||0;
+        const newCount=participants?.length||0;
+        
+        // CRITICAL: Block if we're about to delete existing participants
+        if(currentCount>0 && newCount===0){
+            console.error('BLOCKED: Attempted to wipe',currentCount,'participants');
+            alert(`⚠️ Error: Cannot save - would delete ${currentCount} participants. Please refresh the page.`);
+            return;
+        }
+        
+        await sbSet('genesisPool2026',{participants,golferScores,missedCuts:Array.from(missedCuts)});
     }
-    try{await sbSet('genesisPool2026',{participants,golferScores,missedCuts:Array.from(missedCuts)});}
     catch(e){console.error('Save error:',e);alert('⚠️ Could not save. Check connection and try again.');}
 }
 
