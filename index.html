@@ -198,12 +198,30 @@ async function loadData(force=false){
     const now=Date.now();
     if(!force && now-lastLoadTime < 10000) return; // skip if loaded within 10 seconds
     lastLoadTime=now;
-    try{const d=await sbGet('genesisPool2026');participants=d?.participants||[];golferScores=d?.golferScores||{};missedCuts=new Set(d?.missedCuts||[]);}
-    catch(e){console.error(e);participants=[];golferScores={};}
+    try{
+        const d=await sbGet('genesisPool2026');
+        if(d && d.participants){
+            participants=d.participants;
+            golferScores=d.golferScores||{};
+            missedCuts=new Set(d.missedCuts||[]);
+        }
+        // If d is null or empty, DON'T overwrite - keep existing data
+    }
+    catch(e){
+        console.error('Error loading data - keeping existing:', e);
+        // DON'T reset to empty on error - keep what we have
+    }
+}
 }
 async function saveData(){
+    // CRITICAL: Never save if participants is empty - this would wipe everyone
+    if(!participants || participants.length === 0){
+        console.error('BLOCKED: Attempted to save empty participants array');
+        alert('⚠️ Error: Cannot save - participant data is missing. Please refresh the page.');
+        return;
+    }
     try{await sbSet('genesisPool2026',{participants,golferScores,missedCuts:Array.from(missedCuts)});}
-    catch(e){console.error(e);alert('⚠️ Could not save. Check connection and try again.');}
+    catch(e){console.error('Save error:',e);alert('⚠️ Could not save. Check connection and try again.');}
 }
 
 function buildGrid(){
